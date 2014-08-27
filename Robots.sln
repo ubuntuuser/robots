@@ -1,0 +1,41 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Truck", "Truck\Truck.csproj", "{4D8CF563-BD24-4CD9-8179-74A05CBD40AF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Reachstacker", "Reachstacker\Reachstacker.csproj", "{4EEDC8C4-300A-4804-BF9F-F0EDB1E37061}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GantryCrane", "GantryCrane\GantryCrane.csproj", "{897C7723-9B15-4EA0-BB7A-5610DECEDF02}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4D8CF563-BD24-4CD9-8179-74A05CBD40AF}.Debug|x86.ActiveCfg = Debug|x86
+		{4D8CF563-BD24-4CD9-8179-74A05CBD40AF}.Debug|x86.Build.0 = Debug|x86
+		{4D8CF563-BD24-4CD9-8179-74A05CBD40AF}.Release|x86.ActiveCfg = Release|x86
+		{4D8CF563-BD24-4CD9-8179-74A05CBD40AF}.Release|x86.Build.0 = Release|x86
+		{4EEDC8C4-300A-4804-BF9F-F0EDB1E37061}.Debug|x86.ActiveCfg = Debug|x86
+		{4EEDC8C4-300A-4804-BF9F-F0EDB1E37061}.Debug|x86.Build.0 = Debug|x86
+		{4EEDC8C4-300A-4804-BF9F-F0EDB1E37061}.Release|x86.ActiveCfg = Release|x86
+		{4EEDC8C4-300A-4804-BF9F-F0EDB1E37061}.Release|x86.Build.0 = Release|x86
+		{897C7723-9B15-4EA0-BB7A-5610DECEDF02}.Debug|x86.ActiveCfg = Debug|x86
+		{897C7723-9B15-4EA0-BB7A-5610DECEDF02}.Debug|x86.Build.0 = Debug|x86
+		{897C7723-9B15-4EA0-BB7A-5610DECEDF02}.Release|x86.ActiveCfg = Release|x86
+		{897C7723-9B15-4EA0-BB7A-5610DECEDF02}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = Reachstacker\Reachstacker.csproj
+		Policies = $0
+		$0.VersionControlPolicy = $1
+		$1.inheritsSet = Mono
+		$0.ChangeLogPolicy = $2
+		$2.UpdateMode = ProjectRoot
+		$2.VcsIntegration = RequireEntry
+		$2.MessageStyle = $3
+		$3.LineAlign = 0
+		$2.inheritsSet = Mono
+	EndGlobalSection
+EndGlobal
