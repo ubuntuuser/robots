@@ -33,7 +33,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="MonoBrickFirmware">
-      <HintPath>bin\Debug\MonoBrickFirmware.dll</HintPath>
+      <HintPath>..\..\monoev3\MonoBrickFirmware\bin\Debug\MonoBrickFirmware.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

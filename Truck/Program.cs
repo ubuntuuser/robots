@@ -24,7 +24,7 @@ namespace Truck {
 
 			//---------------------------------
 			Truck truck = new Truck();
-			truck.listen ();
+//			truck.listen ();
 
 
 
