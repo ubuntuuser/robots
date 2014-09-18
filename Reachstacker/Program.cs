@@ -16,17 +16,14 @@ using MonoBrickFirmware.Movement;
 using MonoBrickFirmware.Sensors;
 using MonoBrickFirmware.UserInput;
 
-namespace Reachstacker
-{
-	class MainClass
-	{
-		public static void Main (string[] args)
-		{
+namespace Reachstacker {
+	class MainClass {
+		public static void Main (string[] args) {
 			LcdConsole.WriteLine (">> Start");
 			Console.WriteLine (">> Start");
 
 			Reachstacker rs = new Reachstacker ();
-//			rs.listen ();
+			rs.listen ();
 
 			System.Threading.Thread.Sleep (3000);
 			LcdConsole.WriteLine (">> Exit");

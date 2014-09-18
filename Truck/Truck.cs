@@ -17,56 +17,43 @@ using MonoBrickFirmware.Sensors;
 namespace Truck {
 	public class Truck {
 		private volatile bool stop = false;
+		private volatile bool busy = false;
 		private Motor motorFwd;
 		private Motor motorTurn;
-		private BlockingCollection<string> messages = new BlockingCollection<string>();
+		private BlockingCollection<string> messages = new BlockingCollection<string> ();
+		private const float P = 0.8f;
+		private const float I = 1800.1f;
+		private const float D = 0.5f;
 
 		public Truck () {
 			init ();
 		}
 
-		private void init() {
-			motorFwd = new Motor(MotorPort.OutA);
-			motorTurn = new Motor(MotorPort.OutB);
+		private void init () {
+			motorFwd = new Motor (MotorPort.OutA);
+			motorTurn = new Motor (MotorPort.OutB);
 			motorFwd.ResetTacho ();
 			motorTurn.ResetTacho ();
-			Console.WriteLine (motorTurn.GetTachoCount ());
-//			for (int i = 0; i < 5; ++i) {
-//				WaitHandle handle;
-//				handle = motorTurn.SpeedProfile (10, 50, 100, 50, false);
-//				Console.WriteLine ("Waiting");
-//				handle.ToString ();
-////				handle.WaitOne ();
-//				Thread.Sleep (1000);
-//				Console.WriteLine (motorTurn.GetTachoCount ());
-//				handle = motorTurn.SpeedProfile (-10, 50, 100, 50, false);
-////				handle.WaitOne ();
-//				Thread.Sleep (1000);
-//				Console.WriteLine (motorTurn.GetTachoCount ());
-//			}
-			move (7500, 30, true, false);
-//			uturn (440, 2000);
-//			move (7500, 30, true, false);
-//			uturn (440, 2000);
+
 			stopMotors ();
 		}
 
-		public void listen() {
-			Thread tcpListenerThread = new Thread(listenOnTcp);
-			Thread worker = new Thread(processMessagestack);
+		public void listen () {
+			Thread tcpListenerThread = new Thread (listenOnTcp);
+			Thread worker = new Thread (processMessagestack);
 			tcpListenerThread.Start ();
 			worker.Start ();
 			tcpListenerThread.Join ();
 			worker.Join ();
 		}
 
-		private void listenOnTcp() {
-			TcpListener serverSocket = new TcpListener(IPAddress.Any, 8888);
+		private void listenOnTcp () {
+			TcpListener serverSocket = new TcpListener (IPAddress.Any, 8888);
 			int requestCount = 0;
 			TcpClient clientSocket = default(TcpClient);
 			serverSocket.Start ();
 			LcdConsole.WriteLine (">> Server started");
-			Console.WriteLine(">> Server started");
+			Console.WriteLine (">> Server started");
 			clientSocket = serverSocket.AcceptTcpClient ();
 			LcdConsole.WriteLine (">> Waiting for connection from client");
 
@@ -95,9 +82,9 @@ namespace Truck {
 			serverSocket.Stop ();
 		}
 
-		private void processMessagestack() {
+		private void processMessagestack () {
 			while (!stop) {
-				if (messages.Count > 0) {
+				if (!busy && messages.Count > 0) {
 					string message = null;
 					messages.TryTake (out message);
 					if (message != null)
@@ -106,7 +93,8 @@ namespace Truck {
 			}
 		}
 
-		private void processMessage(string message) {
+		private void processMessage (string message) {
+			busy = true;
 			if (message.Contains ("$")) {
 				switch (message.Split ('$') [0]) {
 				case "goTo"://goTo$truckStart#truckInLoadingZone#
@@ -149,17 +137,22 @@ namespace Truck {
 					break;
 				}
 			}
+			busy = false;
 		}
 		//TODO convert cm to units
-		private void move(int waitmiliseconds, int speed = 30, bool fwd = true, bool brake = true) {
+		private void move (int units, int speed = 30, bool fwd = true, bool brake = true) {
+			int toUnit = 0;
 			if (fwd)
-				speed *= -1;
-			motorFwd.SetSpeed ((sbyte)speed);
-			Thread.Sleep (waitmiliseconds);
-			motorFwd.Off ();
+				toUnit = motorFwd.GetTachoCount () - units;
+			else
+				toUnit = motorFwd.GetTachoCount () + units;
+			Console.WriteLine ("moving from " + motorFwd.GetTachoCount () + " to " + toUnit);
+			PositionPID PID = new PositionPID (motorFwd, toUnit, false, (sbyte)speed, P, I, D, 200);
+			PID.Run ().WaitOne ();
+			Console.WriteLine (motorFwd.GetTachoCount ().ToString ());
 		}
 
-		private void turn(int units, int waitmiliseconds, int fwdspeed = 30, bool fwd = true, byte turnspeed = 40, bool brake = false) {
+		private void turn (int units, int waitmiliseconds, int fwdspeed = 30, bool fwd = true, byte turnspeed = 40, bool brake = false) {
 			if (fwd)
 				fwdspeed *= -1;
 			WaitHandle handle;
@@ -167,16 +160,16 @@ namespace Truck {
 			uint rampsteps = (uint)(units * 0.2);
 			uint plateausteps = (uint)(units - 2 * rampsteps);
 			//motorTurn.MoveTo (turnspeed, motorTurn.GetTachoCount () + units, brake);
-				handle = motorTurn.SpeedProfile ((sbyte)turnspeed, rampsteps, plateausteps, rampsteps, brake);
+			handle = motorTurn.SpeedProfile ((sbyte)turnspeed, rampsteps, plateausteps, rampsteps, brake);
 			handle.WaitOne ();
 			Thread.Sleep (waitmiliseconds);
 			//motorTurn.MoveTo (turnspeed, motorTurn.GetTachoCount () - units, brake);
-			handle = motorTurn.SpeedProfile ((sbyte)(turnspeed*-1), rampsteps, plateausteps, rampsteps, brake);
+			handle = motorTurn.SpeedProfile ((sbyte)(turnspeed * -1), rampsteps, plateausteps, rampsteps, brake);
 			handle.WaitOne ();
 			motorFwd.Off ();
 		}
 
-		private void uturn(int units, int waitmiliseconds, int fwdspeed = 20, bool fwd = true, byte turnspeed = 40, bool brake = false) {
+		private void uturn (int units, int waitmiliseconds, int fwdspeed = 20, bool fwd = true, byte turnspeed = 40, bool brake = false) {
 			if (fwd)
 				fwdspeed *= -1;
 
@@ -192,7 +185,7 @@ namespace Truck {
 			Console.WriteLine ("Tachocount: " + motorTurn.GetTachoCount ());
 			Thread.Sleep (waitmiliseconds);
 //			motorTurn.MoveTo (turnspeed, motorTurn.GetTachoCount () - units, brake);
-			handle = motorTurn.SpeedProfile ((sbyte)(turnspeed*-1), rampsteps, plateausteps, rampsteps, brake);
+			handle = motorTurn.SpeedProfile ((sbyte)(turnspeed * -1), rampsteps, plateausteps, rampsteps, brake);
 			handle.WaitOne ();
 			Console.WriteLine ("Tachocount: " + motorTurn.GetTachoCount ());
 //			motorTurn.MoveTo (turnspeed, motorTurn.GetTachoCount () + units, brake);
@@ -201,19 +194,19 @@ namespace Truck {
 			Console.WriteLine ("Tachocount: " + motorTurn.GetTachoCount ());
 			Thread.Sleep (waitmiliseconds);
 //			motorTurn.MoveTo (turnspeed, motorTurn.GetTachoCount () - units, brake);
-			handle = motorTurn.SpeedProfile ((sbyte)(turnspeed*-1), rampsteps, plateausteps, rampsteps, brake);
+			handle = motorTurn.SpeedProfile ((sbyte)(turnspeed * -1), rampsteps, plateausteps, rampsteps, brake);
 			handle.WaitOne ();
 			Console.WriteLine ("Tachocount: " + motorTurn.GetTachoCount ());
 
 			motorFwd.Off ();
 		}
 
-		private void stopMotors() {
+		private void stopMotors () {
 			motorTurn.Off ();
 			motorFwd.Off ();
 		}
 
-		private void goFromStartToUnloading() {
+		private void goFromStartToUnloading () {
 			move (10000, -30, false);
 			turn (380, 2000);
 			turn (380, 2000);

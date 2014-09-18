@@ -132,7 +132,7 @@ namespace Robots.GantryCrane {
 						break;
 					default:
 						Console.WriteLine ("Unknown Message: " + message);
-						stop = true;
+						//stop = true;
 						break;
 					}
 				} else {
@@ -154,7 +154,7 @@ namespace Robots.GantryCrane {
 			Console.WriteLine (motorShuttle.GetTachoCount ().ToString ());
 		}
 
-		private void arm (int toUnit, int speed = 40, bool brake = true) {
+		private void arm (int toUnit, int speed = 50, bool brake = true) {
 			toUnit *= -1;
 			Console.WriteLine ("moving arm from " + motorArm.GetTachoCount () + " to " + toUnit);
 			PositionPID PID = new PositionPID (motorArm, toUnit, false, (sbyte)speed, P, I, D, 200);

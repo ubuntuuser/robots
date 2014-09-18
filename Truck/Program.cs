@@ -19,12 +19,12 @@ namespace Truck {
 	class MainClass {
 
 
-		public static void Main(string[] args) {
+		public static void Main (string[] args) {
 			LcdConsole.WriteLine ("Hello Lcd");
 
 			//---------------------------------
-			Truck truck = new Truck();
-//			truck.listen ();
+			Truck truck = new Truck ();
+			truck.listen ();
 
 
 
