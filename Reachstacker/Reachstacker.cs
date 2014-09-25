@@ -125,22 +125,22 @@ namespace Reachstacker {
 			Console.WriteLine (">> processMessage");
 			if (message.Contains ("$")) {
 				switch (message.Split ('$') [0]) {
-				case "goTo"://goTo$truckStart#truckInLoadingZone#
-					LcdConsole.WriteLine ("moving");
-					string from = (message.Split ('$') [1]).Split ('#') [0];
-					string to = ((message.Split ('$') [1]).Split ('#') [1]).Trim ();
-					if (from.Equals ("truckStart") && to.Equals ("truckInLoadingZone")) {
-						goFromStartToUnloading ();
-					} else if (to.Equals ("truckStart") && from.Equals ("truckInLoadingZone")) {
-
-					} else {
-						LcdConsole.WriteLine ("Route not possible");
-						LcdConsole.WriteLine ("From:" + from);
-						LcdConsole.WriteLine (from.Equals ("truckStart").ToString ());
-						LcdConsole.WriteLine ("To:" + to + ".");
-						LcdConsole.WriteLine (to.Equals ("truckInLoadingZone").ToString ());
-					}
-					break;
+//				case "goTo"://goTo$truckStart#truckInLoadingZone#
+//					LcdConsole.WriteLine ("moving");
+//					string from = (message.Split ('$') [1]).Split ('#') [0];
+//					string to = ((message.Split ('$') [1]).Split ('#') [1]).Trim ();
+//					if (from.Equals ("truckStart") && to.Equals ("truckInLoadingZone")) {
+//						goFromStartToUnloading ();
+//					} else if (to.Equals ("truckStart") && from.Equals ("truckInLoadingZone")) {
+//
+//					} else {
+//						LcdConsole.WriteLine ("Route not possible");
+//						LcdConsole.WriteLine ("From:" + from);
+//						LcdConsole.WriteLine (from.Equals ("truckStart").ToString ());
+//						LcdConsole.WriteLine ("To:" + to + ".");
+//						LcdConsole.WriteLine (to.Equals ("truckInLoadingZone").ToString ());
+//					}
+//					break;
 				case "turnfwd":
 					turn (int.Parse (message.Split ('$') [1]), int.Parse (message.Split ('$') [2]));
 					break;
@@ -150,6 +150,10 @@ namespace Reachstacker {
 				case "fwd":
 					int unitsfwd = int.Parse (message.Split ('$') [1]);
 					move (unitsfwd);
+					break;
+				case "moveTo":
+					int unit = int.Parse (message.Split ('$') [1]);
+					moveTo (unit);
 					break;
 				case "switch":
 					switchMode ();
@@ -165,6 +169,18 @@ namespace Reachstacker {
 					units = int.Parse (message.Split ('$') [1]);
 					extendTo (units);
 					break;
+				case "getContainerFromTruck":
+					getContainerFromTruck ();
+					break;
+				case "dropContainerOnTruck":
+					dropContainerOnTruck ();
+					break;
+				case "getContainerFromStorage":
+					getContainerFromStorage ();
+					break;
+				case "dropContainerOnStorage":
+					dropContainerOnStorage ();
+					break;
 				default:
 					Console.WriteLine ("Unknown Message");
 					//stop = true;
@@ -172,8 +188,7 @@ namespace Reachstacker {
 				}
 			} else {
 				stop = true;
-				if (extensionMode)
-					switchMode ();
+				reset ();
 				Console.WriteLine (">> Invalid Message, shutting down");
 				LcdConsole.WriteLine (">> Invalid Message, shutting down");
 			}
@@ -186,8 +201,12 @@ namespace Reachstacker {
 				toUnit = motorFwd.GetTachoCount () + units;
 			else
 				toUnit = motorFwd.GetTachoCount () - units;
-			Console.WriteLine ("moving from " + motorFwd.GetTachoCount () + " to " + toUnit);
-			PositionPID PID = new PositionPID (motorFwd, toUnit, false, (sbyte)speed, P, I, D, 200);
+			moveTo (toUnit, speed, fwd, brake);
+		}
+
+		private void moveTo (int units, int speed = 60, bool fwd = true, bool brake = true) {
+			Console.WriteLine ("moving from " + motorFwd.GetTachoCount () + " to " + units);
+			PositionPID PID = new PositionPID (motorFwd, units, false, (sbyte)speed, P, I, D, 200);
 			PID.Run ().WaitOne ();
 			Console.WriteLine (motorFwd.GetTachoCount ().ToString ());
 		}
@@ -224,14 +243,12 @@ namespace Reachstacker {
 		}
 
 		void reset () {
-			EV3TouchSensor heightSensor = new EV3TouchSensor (SensorPort.In4);
+			moveTo (0);
+			liftTo (0);
+			if (currExtension != 0)
+				extendTo (0);
 			if (extensionMode)
 				switchMode ();
-			motorExtend.SetSpeed (-10);
-			while (!heightSensor.IsPressed ()) {
-				System.Threading.Thread.Sleep (100);
-			}
-			motorExtend.Off ();
 		}
 
 		private void stopMotors () {
@@ -241,11 +258,36 @@ namespace Reachstacker {
 			motorExtend.Off ();
 		}
 
-		private void goFromStartToUnloading () {
-			move (10000, -30, false);
-			turn (380, 2000);
-			turn (380, 2000);
-			move (4000, -30, true);
+		private void getContainerFromTruck () {
+			liftTo (25000);
+			moveTo (2200);
+			liftTo (12000);
+			moveTo (2270);
+			liftTo (25000);
+		}
+
+		void dropContainerOnTruck () {
+			liftTo (25000);
+			moveTo (2270);
+			liftTo (12000);
+			moveTo (2100);
+			liftTo (25000);
+		}
+
+		void getContainerFromStorage () {
+			liftTo (25000);
+			moveTo (1700);
+			liftTo (1000);
+			moveTo (1770);
+			liftTo (25000);
+		}
+
+		void dropContainerOnStorage () {
+			liftTo (25000);
+			moveTo (1670);
+			liftTo (1000);
+			moveTo (1600);
+			liftTo (25000);
 		}
 
 		private void liftTo (int unit) {

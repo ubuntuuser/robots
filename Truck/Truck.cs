@@ -102,7 +102,7 @@ namespace Truck {
 					string from = (message.Split ('$') [1]).Split ('#') [0];
 					string to = ((message.Split ('$') [1]).Split ('#') [1]).Trim ();
 					if (from.Equals ("truckStart") && to.Equals ("truckInLoadingZone")) {
-						goFromStartToUnloading ();
+						goToUnloading ();
 					} else if (to.Equals ("truckStart") && from.Equals ("truckInLoadingZone")) {
 
 					} else {
@@ -123,6 +123,19 @@ namespace Truck {
 					int unitsfwd = int.Parse (message.Split ('$') [1]);
 					move (unitsfwd);
 					break;
+				case "moveTo":
+					int unit = int.Parse (message.Split ('$') [1]);
+					moveTo (unit);
+					break;
+				case "goToLoading":
+					goToUnloading ();
+					break;
+				case "goToStart":
+					goToStart ();
+					break;
+				case "goToEnd":
+					goToEnd ();
+					break;
 				case "loop":
 
 					move (7500, 30, true, false);
@@ -133,6 +146,7 @@ namespace Truck {
 					break;
 				default:
 					LcdConsole.WriteLine ("Unknown Message");
+					goToEnd ();
 					stop = true;
 					break;
 				}
@@ -146,8 +160,12 @@ namespace Truck {
 				toUnit = motorFwd.GetTachoCount () - units;
 			else
 				toUnit = motorFwd.GetTachoCount () + units;
-			Console.WriteLine ("moving from " + motorFwd.GetTachoCount () + " to " + toUnit);
-			PositionPID PID = new PositionPID (motorFwd, toUnit, false, (sbyte)speed, P, I, D, 200);
+			moveTo (toUnit, speed, fwd, brake);
+		}
+
+		private void moveTo (int units, int speed = 30, bool fwd = true, bool brake = true) {
+			Console.WriteLine ("moving from " + motorFwd.GetTachoCount () + " to " + units);
+			PositionPID PID = new PositionPID (motorFwd, units, false, (sbyte)speed, P, I, D, 200);
 			PID.Run ().WaitOne ();
 			Console.WriteLine (motorFwd.GetTachoCount ().ToString ());
 		}
@@ -206,11 +224,16 @@ namespace Truck {
 			motorFwd.Off ();
 		}
 
-		private void goFromStartToUnloading () {
-			move (10000, -30, false);
-			turn (380, 2000);
-			turn (380, 2000);
-			move (4000, -30, true);
+		private void goToUnloading () {
+			moveTo (-1000);
+		}
+
+		private void goToStart () {
+			moveTo (0);
+		}
+
+		private void goToEnd () {
+			moveTo (4000);
 		}
 	}
 }

@@ -126,9 +126,30 @@ namespace Robots.GantryCrane {
 						units = int.Parse (message.Split ('$') [1]);
 						shuttle (units);
 						break;
+					case "reset":
+						reset ();
+						break;
 					case "tower":
 						units = int.Parse (message.Split ('$') [1]);
 						tower (units);
+						break;
+					case "getContainerFromShip":
+						getContainerFromShip ();
+						break;
+					case "dropContainerOnShip":
+						dropContainerOnShip ();
+						break;
+					case "getContainerFromTrain":
+						getContainerFromTrain ();
+						break;
+					case "dropContainerOnTrain":
+						dropContainerOnTrain ();
+						break;
+					case "getContainerFromStorage":
+						getContainerFromStorage ();
+						break;
+					case "dropContainerOnStorage":
+						dropContainerOnStorage ();
 						break;
 					default:
 						Console.WriteLine ("Unknown Message: " + message);
@@ -142,6 +163,7 @@ namespace Robots.GantryCrane {
 				busy = false;
 			} catch (Exception e) {
 				Console.WriteLine (e.ToString ());
+				reset ();
 				stop = true;
 			}
 		}
@@ -174,6 +196,53 @@ namespace Robots.GantryCrane {
 			motorArm.Off ();
 			motorShuttle.Off ();
 			motorTower.Off ();
+		}
+
+		private void getContainerFromShip () {
+			shuttle (140);
+			arm (3300);
+			shuttle (80);
+			arm (1500);
+		}
+
+		private void dropContainerOnShip () {
+			shuttle (80);
+			arm (3300);
+			shuttle (140);
+			arm (1500);
+		}
+
+		private void getContainerFromTrain () {
+			shuttle (760);
+			arm (3100);
+			shuttle (700);
+			arm (1500);
+		}
+
+		private void dropContainerOnTrain () {
+			shuttle (700);
+			arm (3100);
+			shuttle (760);
+			arm (1500);
+		}
+
+		private void getContainerFromStorage () {
+			shuttle (1760);
+			arm (3700);
+			shuttle (1700);
+			arm (1500);
+		}
+
+		private void dropContainerOnStorage () {
+			shuttle (1700);
+			arm (3700);
+			shuttle (1760);
+			arm (1500);
+		}
+
+		void reset () {
+			shuttle (0);
+			arm (0);
 		}
 	}
 }
