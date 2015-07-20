@@ -27,7 +27,6 @@ Global
 		{897C7723-9B15-4EA0-BB7A-5610DECEDF02}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = Truck\Truck.csproj
 		Policies = $0
 		$0.VersionControlPolicy = $1
 		$1.inheritsSet = Mono

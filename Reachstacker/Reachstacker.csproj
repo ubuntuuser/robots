@@ -9,7 +9,6 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>Reachstacker</RootNamespace>
     <AssemblyName>Reachstacker</AssemblyName>
-    <BaseDirectory>.</BaseDirectory>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,6 +20,12 @@
     <WarningLevel>4</WarningLevel>
     <Externalconsole>true</Externalconsole>
     <PlatformTarget>x86</PlatformTarget>
+    <CustomCommands>
+      <CustomCommands>
+        <Command type="AfterExecute" command="scp * root@reachstacker:/home/root/apps/Reachstacker/" workingdir="${TargetPath}" />
+        <Command type="AfterBuild" command="scp * root@reachstacker:/home/root/apps/Reachstacker/" workingdir="/home/trans/build/robots/Reachstacker/bin/Debug/" externalConsole="True" />
+      </CustomCommands>
+    </CustomCommands>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <DebugType>full</DebugType>

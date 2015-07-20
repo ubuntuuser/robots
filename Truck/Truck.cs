@@ -7,6 +7,7 @@
 //  Copyright (c) 2014 Johannes Doblmann
 using System;
 using MonoBrickFirmware.Movement;
+using MonoBrickFirmware.Sound;
 using System.Threading;
 using System.Net.Sockets;
 using System.Collections.Concurrent;
@@ -24,6 +25,7 @@ namespace Truck {
 		private const float P = 0.8f;
 		private const float I = 1800.1f;
 		private const float D = 0.5f;
+		private Speaker speaker = new Speaker (50);
 
 		public Truck () {
 			init ();
@@ -65,6 +67,7 @@ namespace Truck {
 					networkStream.Read (bytesFrom, 0, (int)clientSocket.ReceiveBufferSize);
 					string dataFromClient = System.Text.Encoding.ASCII.GetString (bytesFrom);
 					messages.Add (dataFromClient);
+					speaker.Beep ();
 					dataFromClient = dataFromClient.Substring (0, dataFromClient.IndexOf ("$"));
 					LcdConsole.WriteLine (">> Data: " + dataFromClient);
 					string serverResponse = "Server Response " + Convert.ToString (requestCount);

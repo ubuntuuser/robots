@@ -7,6 +7,7 @@
 //  Copyright (c) 2014 Johannes Doblmann
 using System;
 using MonoBrickFirmware.Movement;
+using MonoBrickFirmware.Sound;
 using System.Threading;
 using System.Net.Sockets;
 using System.Collections.Concurrent;
@@ -32,9 +33,10 @@ namespace Reachstacker {
 		private int heightContainerLevel2 = 20000;
 		private int currExtension;
 		private int currHeight;
-		private const float P = 0.8f;
-		private const float I = 1800.1f;
-		private const float D = 0.5f;
+		private const float P = 4.8f;
+		private const float I = 800.1f;
+		private const float D = 8.5f;
+		private Speaker speaker = new Speaker (50);
 		private List<string> possiblePlaces = new List<string> () {
 			"Start",
 			"InFrontOfTruck",
@@ -89,6 +91,7 @@ namespace Reachstacker {
 					byte[] bytesFrom = new byte[1000025];
 					networkStream.Read (bytesFrom, 0, (int)clientSocket.ReceiveBufferSize);
 					string dataFromClient = System.Text.Encoding.ASCII.GetString (bytesFrom);
+					speaker.Beep ();
 					messages.Add (dataFromClient);
 					dataFromClient = dataFromClient.Substring (0, dataFromClient.IndexOf ("$"));
 					LcdConsole.WriteLine (">> Data: " + dataFromClient);
@@ -108,15 +111,26 @@ namespace Reachstacker {
 		}
 
 		private void processMessagestack () {
-			Console.WriteLine (">> processMessagestack");
-			while (!stop) {
-				if (!busy && messages.Count > 0) {
-					string message = null;
-					messages.TryTake (out message);
-					if (message != null)
-						processMessage (message);
+			bool beeped = true;
+			try {
+				while (!stop) {
+					if (!busy && messages.Count > 0) {
+						string message = null;
+						messages.TryTake (out message);
+						if (message != null)
+							processMessage (message);
+						beeped = false;
+					} else if (!busy && messages.Count == 0 && !beeped) {
+						speaker.Beep ();
+						Thread.Sleep (200);
+						speaker.Beep ();
+						beeped = true;
+					}
+					Thread.Sleep (500);
 				}
-				Thread.Sleep (100);	
+			} catch (Exception e) {
+				Console.WriteLine (e.ToString ());
+				stop = true;
 			}
 		}
 
@@ -124,23 +138,8 @@ namespace Reachstacker {
 			busy = true;
 			Console.WriteLine (">> processMessage");
 			if (message.Contains ("$")) {
+				
 				switch (message.Split ('$') [0]) {
-//				case "goTo"://goTo$truckStart#truckInLoadingZone#
-//					LcdConsole.WriteLine ("moving");
-//					string from = (message.Split ('$') [1]).Split ('#') [0];
-//					string to = ((message.Split ('$') [1]).Split ('#') [1]).Trim ();
-//					if (from.Equals ("truckStart") && to.Equals ("truckInLoadingZone")) {
-//						goFromStartToUnloading ();
-//					} else if (to.Equals ("truckStart") && from.Equals ("truckInLoadingZone")) {
-//
-//					} else {
-//						LcdConsole.WriteLine ("Route not possible");
-//						LcdConsole.WriteLine ("From:" + from);
-//						LcdConsole.WriteLine (from.Equals ("truckStart").ToString ());
-//						LcdConsole.WriteLine ("To:" + to + ".");
-//						LcdConsole.WriteLine (to.Equals ("truckInLoadingZone").ToString ());
-//					}
-//					break;
 				case "turnfwd":
 					turn (int.Parse (message.Split ('$') [1]), int.Parse (message.Split ('$') [2]));
 					break;
@@ -279,7 +278,7 @@ namespace Reachstacker {
 			moveTo (1700);
 			liftTo (1000);
 			moveTo (1770);
-			liftTo (25000);
+			liftTo (15000);
 		}
 
 		void dropContainerOnStorage () {
@@ -287,7 +286,7 @@ namespace Reachstacker {
 			moveTo (1670);
 			liftTo (1000);
 			moveTo (1600);
-			liftTo (25000);
+			liftTo (15000);
 		}
 
 		private void liftTo (int unit) {

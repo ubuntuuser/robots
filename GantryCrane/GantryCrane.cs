@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Text;
 using MonoBrickFirmware.Movement;
+using MonoBrickFirmware.Sound;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Net.Sockets;
@@ -10,22 +12,25 @@ namespace Robots.GantryCrane {
 	public class GantryCrane {
 		private volatile bool stop = false;
 		private volatile bool busy = false;
-		private Motor motorTower;
+		private MotorSync motorTower;
+		private Motor motorTowerB;
 		private Motor motorShuttle;
 		private Motor motorArm;
 		private BlockingCollection<string> messages = new BlockingCollection<string> ();
 		private const float P = 0.8f;
 		private const float I = 1800.1f;
 		private const float D = 0.5f;
+		private Speaker speaker = new Speaker (50);
 
 		public GantryCrane () {
 			init ();
 		}
 
 		private void init () {
-			motorTower = new Motor (MotorPort.OutC);
+			motorTower = new MotorSync (MotorPort.OutB, MotorPort.OutC);
 			motorShuttle = new Motor (MotorPort.OutA);
 			motorArm = new Motor (MotorPort.OutD);
+			motorTowerB = new Motor (MotorPort.OutB);
 			motorShuttle.ResetTacho ();
 			motorArm.ResetTacho ();
 			stopMotors ();
@@ -52,9 +57,10 @@ namespace Robots.GantryCrane {
 			serverSocket.Start ();
 			LcdConsole.WriteLine (">> Server started");
 			Console.WriteLine (">> Server started");
+			speaker.Buzz (500);
 			clientSocket = serverSocket.AcceptTcpClient ();
 			LcdConsole.WriteLine (">> Waiting for connection from client");
-
+			speaker.Buzz (500);
 			while (!stop) {
 				try {
 					++requestCount;
@@ -63,6 +69,7 @@ namespace Robots.GantryCrane {
 					networkStream.Read (bytesFrom, 0, (int)clientSocket.ReceiveBufferSize);
 					string dataFromClient = System.Text.Encoding.ASCII.GetString (bytesFrom);
 					messages.Add (dataFromClient);
+					speaker.Beep (300);
 					dataFromClient = dataFromClient.Substring (0, dataFromClient.IndexOf ("$"));
 					LcdConsole.WriteLine (">> Data: " + dataFromClient);
 					string serverResponse = "Server Response " + Convert.ToString (requestCount);
@@ -81,6 +88,7 @@ namespace Robots.GantryCrane {
 		}
 
 		private void processMessagestack () {
+			bool beeped = true;
 			try {
 				while (!stop) {
 					if (!busy && messages.Count > 0) {
@@ -88,13 +96,27 @@ namespace Robots.GantryCrane {
 						messages.TryTake (out message);
 						if (message != null)
 							processMessage (message);
+						beeped = false;
+					} else if (!busy && messages.Count == 0 && !beeped) {
+						speaker.Beep ();
+						Thread.Sleep (200);
+						speaker.Beep ();
+						beeped = true;
 					}
-					Thread.Sleep (100);
+					Thread.Sleep (500);
 				}
 			} catch (Exception e) {
 				Console.WriteLine (e.ToString ());
 				stop = true;
 			}
+		}
+
+		private string getMessageStack () {
+			StringBuilder sb = new StringBuilder ();
+			foreach (string message in messages) {
+				sb.AppendLine (message);
+			}
+			return sb.ToString ();
 		}
 
 		private void processMessage (string message) {
@@ -184,12 +206,19 @@ namespace Robots.GantryCrane {
 			Console.WriteLine (motorArm.GetTachoCount ().ToString ());
 		}
 
-		private void tower (int toUnit, int speed = 30, bool brake = true) {
+		private void tower (int toUnit, int speed = 20, bool brake = true) {
 			toUnit *= -1;
-			Console.WriteLine ("moving tower from " + motorTower.GetTachoCount () + " to " + toUnit);
-			PositionPID PID = new PositionPID (motorTower, toUnit, false, (sbyte)speed, P, I, D, 200);
-			PID.Run ().WaitOne ();
-			Console.WriteLine (motorTower.GetTachoCount ().ToString ());
+			Console.WriteLine ("moving tower from " + motorTowerB.GetTachoCount () + " to " + toUnit);
+//			PositionPID PID = new PositionPID (motorTower, toUnit, false, (sbyte)speed, P, I, D, 200);
+//			PID.Run ().WaitOne ();
+			int units = toUnit - motorTowerB.GetTachoCount ();
+			if (units < 0) {
+				speed *= -1;
+				units *= -1;
+			}
+			var motorWaitHandle = motorTower.StepSync ((sbyte)speed, 0, (uint)units, true);
+			motorWaitHandle.WaitOne ();
+			Console.WriteLine (motorTowerB.GetTachoCount ().ToString ());
 		}
 
 		private void stopMotors () {
@@ -199,45 +228,45 @@ namespace Robots.GantryCrane {
 		}
 
 		private void getContainerFromShip () {
-			shuttle (140);
-			arm (3300);
-			shuttle (80);
-			arm (1500);
+			shuttle (-250);
+			arm (2900);
+			shuttle (-150);
+			arm (500);
 		}
 
 		private void dropContainerOnShip () {
-			shuttle (80);
-			arm (3300);
-			shuttle (140);
-			arm (1500);
+			shuttle (-150);
+			arm (2900);
+			shuttle (-250);
+			arm (500);
 		}
 
 		private void getContainerFromTrain () {
-			shuttle (760);
-			arm (3100);
-			shuttle (700);
-			arm (1500);
+			shuttle (-950);
+			arm (2600);
+			shuttle (-880);
+			arm (500);
 		}
 
 		private void dropContainerOnTrain () {
-			shuttle (700);
-			arm (3100);
-			shuttle (760);
-			arm (1500);
+			shuttle (-880);
+			arm (2600);
+			shuttle (-950);
+			arm (500);
 		}
 
 		private void getContainerFromStorage () {
-			shuttle (1760);
-			arm (3700);
-			shuttle (1700);
-			arm (1500);
+			shuttle (-2000);
+			arm (3300);
+			shuttle (-1920);
+			arm (500);
 		}
 
 		private void dropContainerOnStorage () {
-			shuttle (1700);
-			arm (3700);
-			shuttle (1760);
-			arm (1500);
+			shuttle (-1920);
+			arm (3300);
+			shuttle (-2000);
+			arm (500);
 		}
 
 		void reset () {
